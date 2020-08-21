@@ -1,0 +1,219 @@
+\documentclass[12pt]{article}
+\setlength\parindent{0pt}
+\usepackage{noweb}
+\begin{document}
+\title{Binary Tree recovery from Inorder}
+\author{Om Prakash (2019MCS2567)}
+\maketitle
+\section{Introduction}
+As it's already discussed, it's not possible to recover a binary tree from an inorder traversal. 
+So, we need to store minimum possible information while doing the inorder traversal, which helps us later to 
+retrieve the binary tree. This document contains two major functions \textbf{inorder} which traverses the 
+input binary tree in \emph{left subtree $\rightarrow$ root $\rightarrow$ right subtree} faishon and \textbf{inorderInverse} function 
+which generates the tree from inorder traversal. 
+\section{Reconstruction from Inorder}
+The main idea is to store the level of each node and key value in the list while doing inorder traversal. When we construct the binary tree, We look for root element which will be at 0th level. The list is divided into two parts, the first part contains the elements before root element and second part contains the element post root element. 
+Next time we look for the element present at 1st level from both the left sublist and right sublist. These two elements will be the children of root element. and we do it recursively to build the tree.
+\pagebreak
+\section{Code}
+\subsection{Signature}
+Following is the signature defined. It contains the type of each function and object.
+<<bintree-signature>>=
+signature BINTREE =
+sig
+
+datatype bintree = Empty | Node of int * bintree * bintree
+exception Empty_BinTree
+exception Null_List
+exception Invalid_Inorder
+val t1 : bintree
+val t2 : bintree
+val t3 : bintree
+val t4 : bintree
+val t5 : bintree
+val t6 : bintree
+val t7 : bintree
+val t8 : bintree
+val t9 : bintree
+val l1 : (int * int) list
+val l2 : 'a list
+val l3 : (int * int) list
+val l4 : (int * int) list
+val l5 : (int * int) list
+
+val inorder_cal : bintree * (int * int) list * int -> (int * int) list
+val inorder : bintree -> (int * int) list
+val split : (int * int) list * int * (int * int) list * (int * int) list -> 
+(int * int) list * int * (int * 
+int) list
+val findRoot : (int * int) list * int -> (int * int) list * int * 
+(int * int) list
+val maketree : (int * int) list * int -> bintree
+val inorderInverse : (int * int) list -> bintree
+end
+
+@
+
+\subsection{Node Datatype}
+
+<<bintree>>=
+datatype bintree = Empty 
+	| Node of int * bintree * bintree;
+@
+
+\subsection{Exceptions}
+Three types of exceptions are declared here. If the empty binary tree is passed as an input to the \textbf{inorder} function then it will raise \textbf{Empty\_BinTree} exception. 
+If \textbf{inorderInverse} is given an empty list then it will raise exception \textbf{Null\_List}. If an invalid inorder is given to the \textbf{inorderInverse} function then it will riase \textbf{Invalid\_Inorder} exception.
+<<exception>>=
+exception Empty_BinTree;
+exception Null_List;
+exception Invalid_Inorder;
+
+@
+
+
+\subsection{Inorder Traversal}
+\subsubsection{Inorder Computation}
+This function \textbf{inorder\_cal} traverses the input Binary tree.It is the core function which traverses the tree from for each node it doesn't only store the node data but also the at which level that node is. Consider the following binary tree
+\\
+.........A
+       
+....B....C
+
+
+the corresponding inorder traversal of this tree will be [(B,1),(A,0),(C,1)] as A is at level 0, B and C are at level 1. We need this level information to reterive the tree.
+
+<<ino>>=
+fun inorder_cal (Empty, Llist, level) = Llist
+| inorder_cal (Node (x, LST, RST), Llist, level) =
+	let val Mlist = inorder_cal (RST, Llist, level+1)
+	val Nlist = inorder_cal (LST, (x,level)::Mlist, level+1)
+	in Nlist
+	end
+
+@
+\subsubsection{Inorder}
+This function \textbf{inorder} calls the function \textbf{inorder\_cal}, it passes three parameters binary tree, an empty list and 0 as starting level of the tree.
+<<inorder>>=
+fun inorder Empty = raise Empty_BinTree
+|   inorder T = inorder_cal(T,[],0);
+
+@
+\subsection{Split the List}
+\subsubsection{Split function}
+The root element of the tree can be anywhere in the inorder traversal. This function traverses the list, finds the root element and splits the list into two parts left subtree and right subtree and returns the root element.
+<<split>>=
+fun split(nil,rootlevel,head,tail) = raise Invalid_Inorder
+| 	split(l : (int*int) list, rootlevel : int , head : (int*int) list , 
+	tail : (int*int) list) = 
+	let
+	val hde = #2(hd(l))
+	in 
+	if(rootlevel = hde) then (List.rev(head), #1(hd(l)), tail@tl(l)) 
+	else split(tl(l), rootlevel, hd(l)::head, tail)
+	end;
+
+@
+\subsubsection{findRoot function}
+This function passes four parameters to \textbf{split} function. The parameters are inorder list, rootlevel, and two empty lists to store left subtree and right subtree.
+
+<<findRoot>>=
+fun findRoot(l,rootlevel) = split(l, rootlevel, [], []);
+
+@
+\subsection{Binary tree recovery}
+\subsubsection{maketree function}
+This function \textbf{maketree} recursuively calls it self on the inorder list and builds node for each element. It recusively build the tree.
+<<maketree>>=
+fun maketree ([], _)  = Empty
+| maketree(l : (int*int) list,k) =
+ let 
+ val (left,x,right)=findRoot(l,k)
+ val lst=maketree(left,k+1)
+ val rst=maketree(right,k+1)
+in Node(x,lst,rst)
+end
+
+@
+\subsubsection{inorderInverse function}
+This function is the main function from where the execution starts. This function should be given inorder traversal list and 0 is passed as root of the tree is assumed to be at 0th level.
+<<inorderInverse>>=
+fun inorderInverse [] = raise Null_List
+| inorderInverse l = maketree(l,0)
+
+@
+
+\section{Test cases}
+\subsubsection{Test cases for inorder function}
+These are different test cases for inorder function. these are binary trees.
+<<testcasesinorder>>=
+(* Single Node Tree*)
+val t1 = Node(10,Empty,Empty);  
+(* Only left child *)
+val t2 = Node(10,Node(20,Empty,Empty),Empty) 
+(* Only Right child *)
+val t3 = Node(10,Empty, Node(20,Empty,Empty)) 
+(*left skewed tree with odd no. of nodes*)
+val t4 = Node(10,Node(20,Node(30,Empty,Empty),Empty),Empty) 
+(*left skewed tree with even no. of nodes*)
+val t5 = Node(10,Node(20,Node(30,Node(40,Empty,Empty),Empty),Empty),Empty) 
+(*right skewed tree with odd no. of nodes*)
+val t6 = Node(10,Empty,Node(20,Empty,Node(30,Empty,Empty))) 
+(*right skewed tree with even no. of nodes*)
+val t7 = Node(10,Empty,Node(20,Empty,Node(30,Empty,Node(40,Empty,Empty)))) 
+
+(*Tree copied from Wrambling through*)
+val t8 = (Node(1,Node(2,Node(4,Empty,Empty),Node(5,Empty,Empty)),
+Node(3,Node(6,Empty,Empty),Node(7,Empty,Empty))));
+(*Complete Tree with all leveld full*)
+val t9 = Node(10,Node(20,Node(40,Empty,Empty),Node(50,Empty,Empty)),
+Node(30,Node(60,Empty,Empty),Node(70,Empty,Empty)))
+@
+
+\subsubsection{Test cases of inverseInorder function}
+These are inorder traversal lists of different binary trees.
+<<testcasesinInverse>>=
+(*Test cases for inorderInverse*)
+(*Single element list*)
+val l1 = [(10,0)]
+(*Empty Tree, exception Null)list will be raised*)
+val l2=[]; 
+(*Inorder without root node, Invalid_Inorder exception will be raised*)
+val l3 = [(20,1),(10,1),(30,1)]; (*No node at level 0 *)
+(*levels are not continuous, Exception Invalid_inorder will be raised*)
+val l4 = [(20,1),(10,0),(30,5)]; (*30 is present at 5th level*)
+(* Valid inorder*)
+val l5 = [(40,2),(20,1),(50,2),(10,0),(60,2),(30,1),(70,2)];
+
+@
+
+\subsection{Structure}
+<<bintree-struct>>=
+structure Bintree : BINTREE =
+struct
+<<bintree>>
+<<exception>>
+<<testcasesinorder>>
+<<testcasesinInverse>>
+<<ino>>
+<<inorder>>
+<<split>>
+<<findRoot>>
+<<maketree>>
+<<inorderInverse>>
+end
+open Bintree;
+@
+
+\section{Binary tree module}
+<<2019mcs2567-module-complete>>=
+<<bintree-signature>>
+<<bintree-struct>>
+@
+\section{Time Complexity}
+We are constructing binary tree from an inorder traversal. To find the root element each time in the list we need to scan and compare each element one by one.
+The worst case occurs if the binary tree is \textbf{left skewed} and the comparisons will be as follows
+	T(n) = n + (n-1) + (n-2) + ...... + 2 + 1
+	which is $n*\frac{(n-1)}{2}$ = $O(n^2)$
+
+\end{document}
