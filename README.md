@@ -7,7 +7,7 @@ will always appear before a child node in preorder traversal (after in postorder
 For the same reason infix expressions require “cosmetic sugar” such as parentheses, associativity and precedence of operators to enable parsing of expressions unambiguously while prefix (or postfix) expressions need only the
 arity of each operator.
 
-#Problem Statement
+# Problem Statement
 Considering the discussion above, design and implement an efficient algorithm to recover the binary tree from an
 inorder traversal (which contains the minumum “cosmetic sugar”). Your task is to document both the traversal
 algorithm that you use and the solution and thought process for the final out come in a single L A TEX-noweb
